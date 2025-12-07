@@ -1,0 +1,376 @@
+<head>
+    <meta charset="UTF-8" />
+    <meta name="referrer" content="no-referrer" />
+    <title>SEM Control</title>
+    <link rel="stylesheet" href="index.css" />
+    <!-- <link rel="shortcut icon" href="images/favicon.ico" /> -->
+    <script src="./static/jquery.min.js"></script>
+    <link rel="stylesheet" href="./static/semantic.min.css" />
+    <script src="./static/semantic.min.js"></script>
+</head>
+<body>
+    <div class="ui menu">
+        <a class="header item" href="/">SEM Control</a>
+        <a class="item" onclick="switchtoTerminal()">Terminal</a>
+        <a class="item" onclick="switchtoPicture()">Picture</a>
+    </div>
+    <div class="ui container" style="margin-top: 20px;">
+        <div id="terminal">
+            <div class="ui grid">
+                <div class="six wide column">
+                    <h2 class="ui header">Settings</h2>
+                    <p>Configure your SEM connection settings below.</p>
+                    <button class="ui button" onclick="searchPort()">Search for COM ports</button>
+                    <br/><br/>
+                    <form class="ui form">
+                        <div class="ui two column grid">
+                            <div class="column">
+                                <div class="field">
+                                    <label>Available COM Ports:</label>
+                                    <select id="comPortSelect0">
+                                        <option value="-" disabled selected>Select port</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                    <label>Baud Rate</label>
+                                    <select id="baudRateSelect0">
+                                        <option value="1200">1200</option>
+                                        <option value="2400">2400</option>
+                                        <option value="4800">4800</option>
+                                        <option value="9600">9600</option>
+                                        <option value="14400">14400</option>
+                                        <option value="19200">19200</option>
+                                        <option value="38400">38400</option>
+                                        <option value="56000">56000</option>
+                                        <option value="57600">57600</option>
+                                        <option value="115200" selected>115200</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                    <label>Parity Bit</label>
+                                    <select id="parityBitSelect0">
+                                        <option value="none" selected>None</option>
+                                        <option value="odd">Odd</option>
+                                        <option value="even">Even</option>
+                                        <option value="mark">Mark</option>
+                                        <option value="space">Space</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                    <label>Data Bit</label>
+                                    <select id="dataBitsSelect0">
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8" selected>8</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                    <label>Stop Bit</label>
+                                    <select id="stopBitsSelect0">
+                                        <option value="1" selected>1</option>
+                                        <option value="2">2</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                    <label>Resolution</label>
+                                    <input type="text" id="resolution0" placeholder="e.g., 400x400" value="400x400">
+                                </div>
+                            </div>
+                        </div>
+                        <br/>
+                        <div class="inline fields">
+                            <label>Data format settings</label>
+                            <div class="field">
+                                <div class="ui radio checkbox disabled">
+                                    <input type="radio" name="dataFormat" checked="checked">
+                                    <label>ASCII</label>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <div class="ui radio checkbox disabled">
+                                    <input type="radio" name="dataFormat">
+                                    <label>HEX</label>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="positive ui button" type="button" onclick="connectPort(0)">Save Settings & Open COM</button>
+                        <button class="negative ui button" type="button" onclick="closePort(0)">Close COM</button>
+                    </form>
+                </div>
+                
+                <div class="ten wide column">
+                    <h2 class="ui header">Terminal</h2>
+                    <div class="ui form">
+                        <div class="field">
+                            <label for="sendArea">Input (&gt;&gt;&gt;) / Output (&lt;&lt;&lt;)</label>
+                            <textarea id="sendArea" rows="24" class="code" placeholder="Commands will appear here."></textarea>
+                            <select class="ui code search dropdown" id="cmdArea" class="code">
+                                <option value="" disabled>command...</option>
+                            </select>
+                            <div class="ui four column grid" style="text-align: center;">
+                                <div class="column">
+                                    <button class="ui button" onclick="appendCommand()">Append</button>
+                                </div>
+                                <div class="column">
+                                    <button class="ui button" onclick="clearCommand()">Clear</button>
+                                </div>
+                                <div class="column">
+                                    <button class="ui button" onclick="sendCommand()">Send</button>
+                                </div>
+                                <div class="column">
+                                    <button class="ui button" onclick="refreshOutput()">Refresh</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- <div class="ui four column grid">
+                <div class="column">
+                    <h3 class="ui header">Offset configuration</h3>
+                    <span style="white-space: no-wraps;">
+                        <div class="ui right pointing label">CH0</div>
+                        <div class="ui slider" id="slider-0-1"></div>
+                    </span>
+                    <br/>
+                    <span style="white-space: no-wraps;">
+                        <div class="ui right pointing label">CH1</div>
+                        <div class="ui slider" id="slider-1-1"></div>
+                    </span>
+                    <br/>
+                    <span style="white-space: no-wraps;">
+                        <div class="ui right pointing label">CH2</div>
+                        <div class="ui slider" id="slider-2-1"></div>
+                    </span>
+                    <br/>
+                    <span style="white-space: no-wraps;">
+                        <div class="ui right pointing label">CH3</div>
+                        <div class="ui slider" id="slider-3-1"></div>
+                    </span>
+                    <br/>
+                    <span style="white-space: no-wraps;">
+                        <div class="ui right pointing label">CH4</div>
+                        <div class="ui slider" id="slider-4-1"></div>
+                    </span>
+                    <br/>
+                    <button class="ui button" onclick="applyOffset()">Apply</button>
+                    <button class="ui button" onclick="resetOffset()">Reset</button>
+                </div>
+                <div class="column">
+                    <h3 class="ui header">Electric current configuration</h3>
+                    <span style="white-space: no-wraps;">
+                        <div class="ui right pointing label">CH0</div>
+                        <div class="ui slider" id="slider-0-2"></div>
+                    </span>
+                    <br/>
+                    <span style="white-space: no-wraps;">
+                        <div class="ui right pointing label">CH1</div>
+                        <div class="ui slider" id="slider-1-2"></div>
+                    </span>
+                    <br/>
+                    <span style="white-space: no-wraps;">
+                        <div class="ui right pointing label">CH2</div>
+                        <div class="ui slider" id="slider-2-2"></div>
+                    </span>
+                    <br/>
+                    <span style="white-space: no-wraps;">
+                        <div class="ui right pointing label">CH3</div>
+                        <div class="ui slider" id="slider-3-2"></div>
+                    </span>
+                    <br/>
+                    <span style="white-space: no-wraps;">
+                        <div class="ui right pointing label">CH4</div>
+                        <div class="ui slider" id="slider-4-2"></div>
+                    </span>
+                    <br/>
+                    <div class="ui labeled input">
+                        <div class="ui label">CH1/CH3</div>
+                        <input type="number" id="mul-1" value="1.000" min="0" max="10" step="0.1">
+                    </div>
+                    <div class="ui labeled input">
+                        <div class="ui label">CH2/CH4</div>
+                        <input type="number" id="mul-2" value="1.000" min="0" max="10" step="0.1">
+                    </div>
+                    <br/>
+                    <button class="ui button" onclick="applyCurrent()">Apply</button>
+                </div>
+                <div class="column">
+                    <h3 class="ui header">Output</h3>
+                    <div style="text-align: center;">
+                        <button class="ui button" onclick="scanPicture()">Scan</button>
+                    </div>
+                    <br/>
+                    <div class="ui indicating progress" id="prg-1">
+                        <div class="bar"></div>
+                    </div>
+                </div>
+                <div class="column">
+                    <h3 class="ui header">Lookup table</h3>
+                    <div class="ui two column grid">
+                        <div class="column">
+                            <div class="ui labeled input">
+                                <div class="ui label">a</div>
+                                <input type="number" id="val-a" value="1.000" min="0" max="10" step="0.1">
+                            </div>
+                            <div class="ui labeled input">
+                                <div class="ui label">b</div>
+                                <input type="number" id="val-b" value="1.000" min="0" max="10" step="0.1">
+                            </div>
+                            <div class="ui labeled input">
+                                <div class="ui label">c</div>
+                                <input type="number" id="val-c" value="1.000" min="0" max="10" step="0.1">
+                            </div>
+                        </div>
+                        <div class="column">
+                            <button class="ui button" onclick="filterLog()">y=log_a(x)+b</button>
+                            <button class="ui button" onclick="filterLinear()">y=ax+b</button>
+                            <button class="ui button" onclick="filterExp()">y=ae^{bx}+c</button>
+                            <button class="ui button" onclick="filterAuto()">auto</button>
+                        </div>
+                    </div>
+                </div>
+            </div> -->
+        </div>
+        <div id="picture">
+            <div class="ui grid">
+                <div class="five wide column">
+                    <h2 class="ui header">Settings</h2>
+                    <p>Configure your SEM connection settings below.</p>
+                    <button class="ui button" onclick="searchPort()">Search for COM ports</button>
+                    <br/><br/>
+                    <form class="ui form">
+                        <div class="ui two column grid">
+                            <div class="column">
+                                <div class="field">
+                                    <label>Available COM Ports:</label>
+                                    <select id="comPortSelect1">
+                                        <option value="-" disabled selected>Select port</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                    <label>Baud Rate</label>
+                                    <select id="baudRateSelect1">
+                                        <option value="1200">1200</option>
+                                        <option value="2400">2400</option>
+                                        <option value="4800">4800</option>
+                                        <option value="9600">9600</option>
+                                        <option value="14400">14400</option>
+                                        <option value="19200">19200</option>
+                                        <option value="38400">38400</option>
+                                        <option value="56000">56000</option>
+                                        <option value="57600">57600</option>
+                                        <option value="115200" selected>115200</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                    <label>Parity Bit</label>
+                                    <select id="parityBitSelect1">
+                                        <option value="none" selected>None</option>
+                                        <option value="odd">Odd</option>
+                                        <option value="even">Even</option>
+                                        <option value="mark">Mark</option>
+                                        <option value="space">Space</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                    <label>Data Bit</label>
+                                    <select id="dataBitsSelect1">
+                                        <option value="5">5</option>
+                                        <option value="6">6</option>
+                                        <option value="7">7</option>
+                                        <option value="8" selected>8</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                    <label>Stop Bit</label>
+                                    <select id="stopBitsSelect1">
+                                        <option value="1" selected>1</option>
+                                        <option value="2">2</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="column">
+                                <div class="field">
+                                    <label>Resolution</label>
+                                    <input type="text" id="resolution1" placeholder="e.g., 400x400" value="400x400">
+                                </div>
+                            </div>
+                        </div>
+                        <br/>
+                        <div class="inline fields">
+                            <label>Data format settings</label>
+                            <div class="field">
+                                <div class="ui radio checkbox disabled">
+                                    <input type="radio" name="dataFormat" checked="checked">
+                                    <label>ASCII</label>
+                                </div>
+                            </div>
+                            <div class="field">
+                                <div class="ui radio checkbox disabled">
+                                    <input type="radio" name="dataFormat">
+                                    <label>HEX</label>
+                                </div>
+                            </div>
+                        </div>
+                        <button class="positive ui button" type="button" onclick="connectPort(1)">Save Settings & Open COM</button>
+                        <button class="negative ui button" type="button" onclick="closePort(1)">Close COM</button>
+                    </form>
+                </div>
+                
+                <div class="four wide column">
+                    <h2 class="ui header">Picture Hex Data</h2>
+                    <div class="ui form">
+                        <div class="field">
+                            <label for="dataArea">Data</label>
+                            <textarea id="dataArea" rows="24" class="code" placeholder="Picture hex data will appear here."></textarea>
+                            <div class="ui two column grid" style="text-align: center;">
+                                <div class="column">
+                                    <button class="ui button" onclick="clearData()">Clear</button>
+                                </div>
+                                <div class="column">
+                                    <button class="ui button" onclick="refreshData()">Refresh</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="seven wide column">
+                    <h2 class="ui header">Picture</h2>
+                    <img id="semImage" style="width: -webkit-fill-available">
+                    <div class="ui two column grid" style="text-align: center;">
+                        <div class="column">
+                            <button class="ui button" onclick="toggleAutoRefresh()" id="autoToggler">Auto Update Off</button>
+                        </div>
+                        <div class="column">
+                            <button class="ui button" onclick="downloadImage()">Export</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="ui right visible thin sidebar">
+            <div id="messages" class="ui nags"></div>
+        </div>
+    </div>
+    <script src="./renderer.js"></script>
+</body>

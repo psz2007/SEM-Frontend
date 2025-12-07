@@ -1,0 +1,13 @@
+.code {
+    font-family: Consolas, Courier, 'Courier New', monospace !important;
+    width: 100% !important;
+    spellcheck: false !important;
+}
+
+.container {
+    width: 75% !important;
+}
+
+.sidebar {
+    width: 10% !important;
+}
