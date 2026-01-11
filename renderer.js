@@ -81,7 +81,7 @@ async function connectPort(op) {
         customConsoleError('Error opening port:', err);
         alert(err);
     }
-    saveSettings();
+    saveSettings(op);
 }
 async function closePort(op) {
     try {
@@ -117,23 +117,27 @@ function datetoString(t) {
 	return cur.toString();
 }
 
-function saveSettings() {
+function saveSettings(id) {
     const settings = {
-        baudRate: $("#baudRate").dropdown("get value"),
-        dataBits: $("#dataBits").dropdown("get value"),
-        stopBits: $("#stopBits").dropdown("get value"),
-        parity: $("#parityBitSelect").dropdown("get value"),
+        baudRate: $(`#baudRateSelect${id}`).dropdown("get value") || 9600,
+        dataBits: $(`#dataBitsSelect${id}`).dropdown("get value") || 8,
+        stopBits: $(`#stopBitsSelect${id}`).dropdown("get value") || 1,
+        parity: $(`#parityBitSelect${id}`).dropdown("get value") || 'none',
     };
-    localStorage.setItem('serialSettings', JSON.stringify(settings));
+    localStorage.setItem(`serialSettings_${id}`, JSON.stringify(settings));
 }
 
-function loadSettings() {
-    const settings = JSON.parse(localStorage.getItem('serialSettings'));
-    if (settings) {
-        document.getElementById('baudRate').value = settings.baudRate || 9600;
-        document.getElementById('dataBits').value = settings.dataBits || 8;
-        document.getElementById('stopBits').value = settings.stopBits || 1;
-        document.getElementById('parityBitSelect').value = settings.parity || 'none';
+function loadSettings(id) {
+    try {
+        const settings = JSON.parse(localStorage.getItem(`serialSettings_${id}`));
+        if (settings) {
+            document.getElementById(`baudRateSelect${id}`).value = settings.baudRate || 9600;
+            document.getElementById(`dataBitsSelect${id}`).value = settings.dataBits || 8;
+            document.getElementById(`stopBitsSelect${id}`).value = settings.stopBits || 1;
+            document.getElementById(`parityBitSelect${id}`).value = settings.parity || 'none';
+        }
+    } catch (err) {
+        customConsoleError('Error loading settings:', err);
     }
 }
 
@@ -170,7 +174,6 @@ async function sendCommand(data) {
     let cmd = (data || document.getElementById('sendArea').value).trim();
 
     const command = cmd.split('\n').map(line => isCmd(line) ? line.trim() : "").filter(line => !!line);
-    console.log(command);
     const run = async (cmd) => await window.sem_control.writeport(cmd, 0).then(response => {
         customConsoleLog('Command sent successfully:', response);
     }).catch(error => {
@@ -186,16 +189,38 @@ async function sendCommand(data) {
     scrollToBottom('sendArea');
 }
 
+var sprFlag = false;
+async function toggleSuperpose() {
+    if (sprFlag) {
+        sprFlag = false;
+        document.getElementById("sprToggler").classList.add("blue");
+        document.getElementById("sprToggler").classList.remove("green");
+        document.getElementById("sprToggler").innerHTML = "Superpose Off";
+    } else {
+        sprFlag = true;
+        document.getElementById("sprToggler").classList.add("green");
+        document.getElementById("sprToggler").classList.remove("blue");
+        document.getElementById("sprToggler").innerHTML = "Superpose On";
+    }
+}
 async function clearData() {
     document.getElementById('dataArea').value = '';
+    $("#prg-1").progress({percent: 0});
     scrollToBottom('dataArea');
     await window.sem_control.readport(1, true);
 }
 async function refreshData() {
     const data = await window.sem_control.readport(1, false);
+    const Lval = $("#sld-1").slider("get thumbValue", 'first'), Rval = $("#sld-1").slider("get thumbValue", 'second');
+    console.log(Lval, Rval);
     document.getElementById('dataArea').value = [...data].map(a => a.charCodeAt(0).toString(16)).join('');
+    $("#prg-1").progress({percent: data.length / (h * v) * 100});
     scrollToBottom('dataArea');
-    document.getElementById('semImage').src = await window.sem_control.getImageData(h || 400, v || 400);
+    if (sprFlag) {
+        document.getElementById('semImage').src = await window.sem_control.getSuperposedImageData(h || 400, v || 400, Lval, Rval);
+    } else {
+        document.getElementById('semImage').src = await window.sem_control.getImageData(h || 400, v || 400, Lval, Rval);
+    }
 }
 var autoFlag = false, autoIntv = -1;
 async function toggleAutoRefresh() {
@@ -216,8 +241,13 @@ async function toggleAutoRefresh() {
 
 async function downloadImage() {
     const timeStamp = datetoString(Date.now());
+    const Lval = $("#sld-1").slider("get thumbValue", 'first'), Rval = $("#sld-1").slider("get thumbValue", 'second');
     try {
-        await window.sem_control.saveImage(h, v, `pic_${timeStamp}.png`);
+        if (sprFlag) {
+            await window.sem_control.saveSuperposedImage(h || 400, v || 400, `pic_${timeStamp}.png`, Lval, Rval);
+        } else {
+            await window.sem_control.saveImage(h || 400, v || 400, `pic_${timeStamp}.png`, Lval, Rval);
+        }
         customConsoleLog(`Picture pic_${timeStamp}.png saved.`);
     } catch {
         customConsoleError(`[${timeStamp}] Failed to download image.`);
@@ -370,8 +400,19 @@ function switchtoPicture() {
 }
 
 window.onload = () => {
-    loadSettings();
+    loadSettings(0);
+    loadSettings(1);
     switchtoTerminal();
     // setSliders();
+    $("#prg-1").progress({});
+    $("#sld-1").slider({
+        min: 0, max: 255,
+        start: 0, end: 255, step: 1,
+        showThumbTooltip: true,
+        tooltipConfig: {
+            position: 'top center',
+            variation: 'small visible green'
+        }
+    });
     searchPort();
 };

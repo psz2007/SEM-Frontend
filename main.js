@@ -105,7 +105,9 @@ const closePort = async(op) => {
         throw new Error('Failed to close port');
     }
 };
-const getImage = async (width, height, sav) => {
+
+const f = (x, l, r) => Math.round(Math.min(Math.max((x - l) / (r - l), 0), 1) * 255);
+const getImage = async (width, height, sav, Lval = 0, Rval = 255) => {
     try {
         const n = width * height, raw = p[1].buffer;
         if (!raw || raw.length === 0) {
@@ -113,7 +115,7 @@ const getImage = async (width, height, sav) => {
         }
         const pixelBuffer = Buffer.alloc(n, 0);
         for (let i = 0; i < raw.length && i < n; i++) {
-            pixelBuffer[i] = raw.charCodeAt(i);
+            pixelBuffer[i] = f(raw.charCodeAt(i), Lval, Rval);
         }
         await sharp(pixelBuffer, {
             raw: {
@@ -129,15 +131,76 @@ const getImage = async (width, height, sav) => {
         throw err;
     }
 };
-const getImageBase64 = async (width, height) => {
+const getImageBase64 = async (width, height, Lval = 0, Rval = 255) => {
+    try {
+        const n = width * height, raw = p[1].buffer;
+        if (!raw || raw.length === 0) {
+            throw new Error("Buffer is empty");
+        }
+        const pixelBuffer = Buffer.alloc(n, 0);
+        for (let i = 0; i < raw.length && i < n; i++) {
+            pixelBuffer[i] = f(raw.charCodeAt(i), Lval, Rval);
+        }
+        let data = await sharp(pixelBuffer, {
+            raw: {
+                width: width,
+                height: height,
+                channels: 1
+            }
+        }).png().toBuffer(); 
+        return `data:image/png;base64,${data.toString('base64')}`;
+    } catch (err) {
+        console.error('Image processing error:', err);
+        throw err;
+    }
+};
+const getSuperposedImage = async (width, height, sav, Lval = 0, Rval = 255) => {
+    try {
+        const n = width * height, raw = p[1].buffer;
+        if (!raw || raw.length === 0) {
+            throw new Error("Buffer is empty");
+        }
+        const pixelBuffer = Buffer.alloc(n, 0);
+        for (let i = 0; i < raw.length; i++) {
+            pixelBuffer[i % n] += raw.charCodeAt(i);
+        }
+        const mx = Math.max(...pixelBuffer);
+        for (let i = 0; i < n; i++) {
+            pixelBuffer[i] = Math.ceil((pixelBuffer[i] / mx) * 255);
+        }
+        for (let i = 0; i < n; i++) {
+            pixelBuffer[i] = f(pixelBuffer[i], Lval, Rval);
+        }
+        await sharp(pixelBuffer, {
+            raw: {
+                width: width,
+                height: height,
+                channels: 1
+            }
+        }).png().toFile(sav); 
+        console.log(`Image saved to ${sav}`);
+        return true;
+    } catch (err) {
+        console.error('Image processing error:', err);
+        throw err;
+    }
+};
+const getSuperposedImageBase64 = async (width, height, Lval = 0, Rval = 255) => {
     try {
         const n = width * height, raw = p[1].buffer;        
         if (!raw || raw.length === 0) {
             throw new Error("Buffer is empty");
         }
         const pixelBuffer = Buffer.alloc(n, 0);
-        for (let i = 0; i < raw.length && i < n; i++) {
-            pixelBuffer[i] = raw.charCodeAt(i);
+        for (let i = 0; i < raw.length; i++) {
+            pixelBuffer[i % n] += raw.charCodeAt(i);
+        }
+        const mx = Math.max(...pixelBuffer);
+        for (let i = 0; i < n; i++) {
+            pixelBuffer[i] = Math.ceil((pixelBuffer[i] / mx) * 255);
+        }
+        for (let i = 0; i < n; i++) {
+            pixelBuffer[i] = f(pixelBuffer[i], Lval, Rval);
         }
         let data = await sharp(pixelBuffer, {
             raw: {
@@ -160,12 +223,18 @@ app.whenReady().then(() => {
     ipcMain.handle('readPort', async (e, op, clear) => await readPort(op, clear));
     ipcMain.handle('writePort', async (e, data, op) => await writePort(data, op));
     ipcMain.handle('closePort', async (e, op) => await closePort(op));
-    ipcMain.handle('saveImage', async (e, width, height, filename) => {
+    ipcMain.handle('saveImage', async (e, width, height, filename, Lval, Rval) => {
         const savePath = path.join(app.getPath('downloads'), filename);
-        await getImage(width, height, savePath);
+        await getImage(width, height, savePath, Lval, Rval);
         return savePath;
     });
-    ipcMain.handle('getImageData', async (e, width, height) => await getImageBase64(width, height));
+    ipcMain.handle('getImageData', async (e, width, height, Lval, Rval) => await getImageBase64(width, height, Lval, Rval));
+    ipcMain.handle('saveSuperposedImage', async (e, width, height, filename, Lval, Rval) => {
+        const savePath = path.join(app.getPath('downloads'), filename);
+        await getSuperposedImage(width, height, savePath, Lval, Rval);
+        return savePath;
+    });
+    ipcMain.handle('getSuperposedImageData', async (e, width, height, Lval, Rval) => await getSuperposedImageBase64(width, height, Lval, Rval));
     createWindow();
     app.on('activate', () => {
         if (BrowserWindow.getAllWindows().length === 0) {

@@ -356,8 +356,17 @@
 
                 <div class="seven wide column">
                     <h2 class="ui header">Picture</h2>
-                    <img id="semImage" style="width: -webkit-fill-available">
-                    <div class="ui two column grid" style="text-align: center;">
+                    <img id="semImage" style="width: -webkit-fill-available" src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==">
+                    <div class="ui indicating progress" id="prg-1" style="margin-top: 10px;">
+                        <div class="bar">
+                            <div class="progress"></div>
+                        </div>
+                    </div>
+                    <div class="ui ticked range slider" id="sld-1"></div>
+                    <div class="ui three column grid" style="text-align: center;">
+                        <div class ="column">
+                            <button class="ui basic blue button" onclick="toggleSuperpose()" id="sprToggler">Superpose Off</button>
+                        </div>
                         <div class="column">
                             <button class="ui button" onclick="toggleAutoRefresh()" id="autoToggler">Auto Update Off</button>
                         </div>
